@@ -1,0 +1,26 @@
+{
+
+  "description": "Ouvre la phrase courante du projet voltaire dans reverso",
+  "manifest_version": 2,
+  "name": "voltaire au bûcher !",
+  "version": "0.1",
+  "icons": {
+    "128": "icons/icon.png"
+  },
+  "homepage_url": "https://github.com/mdn/webextensions-examples/tree/master/apply-css",
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+
+  "page_action": {
+    "default_icon": "icons/off.svg",
+    "browser_style": true
+  },
+  
+  "permissions": [
+    "activeTab",
+    "tabs"
+  ]
+
+}
