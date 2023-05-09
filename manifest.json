@@ -3,7 +3,7 @@
   "description": "Ouvre la phrase courante du projet voltaire dans reverso",
   "manifest_version": 2,
   "name": "Voltaire au bûcher !",
-  "version": "0.1",
+  "version": "0.2",
   "icons": {
     "128": "icons/icon.png"
   },
@@ -16,6 +16,10 @@
   "page_action": {
     "default_icon": "icons/off.svg",
     "browser_style": true
+  },
+
+  "browser_action": {
+    "default_popup": "popup.html"
   },
   
   "permissions": [

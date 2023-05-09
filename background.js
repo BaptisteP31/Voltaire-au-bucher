@@ -1,14 +1,8 @@
-const TITLE_APPLY = "Ouvrir dans Reverso";
+const TITLE_APPLY = "Vérifier la phrase";
 const APPLICABLE_PROTOCOLS = ["http:", "https:"];
 
-/*
-Toggle CSS: based on the current title, insert or remove the CSS.
-Update the page action's title and icon to reflect its state.
-*/
 
-async function displaySentence(tab) {
-    console.log("displaySentence");
-
+async function getSentence() {
     /*
     Get the current tab's HTML
     */
@@ -52,39 +46,79 @@ async function displaySentence(tab) {
         console.log(results);
     });
 
-
-    /*
-    Uncomment to display the sentence in a new div
-    */
-    /*
-    browser.tabs.executeScript({
-      code: "var newDiv = document.createElement('div'); newDiv.innerHTML ='" + toDisplay + "'; document.body.appendChild(newDiv);"
-    });
-    */
-   
-    /*
-    open in reverso using https://www.reverso.net/orthographe/correcteur-francais/#text=
-    */
-    var url = "https://www.reverso.net/orthographe/correcteur-francais/#text=" + toDisplay;
-    //browser.tabs.create({ url: url });
-    // opens a new tab if a tab on reverso is not already open
-    browser.tabs.query({ url: "https://www.reverso.net/*" }).then((tabs) => {
-        if (tabs.length === 0) {
-            browser.tabs.create({ url: url });
-        }
-        else {
-            // closes the reverso tab and opens a new one
-            browser.tabs.remove(tabs[0].id).then(() => {
-                browser.tabs.create({ url: url });
-            }
-            );
-        }
-    }
-    );
+    return toDisplay;
 }
 
+async function getCorrection(toDisplay) {
+    var urlApi = "https://languagetool.org/api/v2/check?language=fr&text=" + toDisplay + "&enabledOnly=false";
+    var gettingApi = fetch(urlApi);
+    var api = gettingApi.then((results) => {
+        return results.json();
+    });
+    
+    var value = api.then((results) => {
+        //return results.matches[0].replacements[0].value;
+        // check if there is a correction
+        if (results.matches.length > 0) {
+            return results.matches[0].replacements[0].value;
+        } else {
+            return "La phrase semble correcte";
+        }
+    });
 
+    var message = api.then((results) => {
+        //return results.matches[0].message;
+        // check if there is a correction
+        if (results.matches.length > 0) {
+            return results.matches[0].message;
+        } else {
+            return "La phrase semble correcte";
+        }
+    });
 
+    //console.log(await value);
+    //console.log(await message);
+    
+    return [await value, await message];
+}
+
+async function displaySentence() {
+    /*
+    var toDisplay = await getSentence();
+    var correction = await getCorrection(toDisplay);
+    var value = correction[0];
+    var message = correction[1];
+    console.log(await value);
+    console.log(await message);
+    */
+
+    var toDisplay = await getSentence();
+    var correction = await getCorrection(toDisplay);
+    var value = correction[0];
+    var message = correction[1];
+
+    console.log("correction : " + correction);
+
+    // removes all divs with id="correction"
+    browser.tabs.executeScript({
+        code: "var divs = document.querySelectorAll('#correction'); for (var i = 0; i < divs.length; i++) { divs[i].remove(); }"
+    });
+    
+    // Adds a div at the end of the body with the correction
+    browser.tabs.executeScript({
+        code: "var div = document.createElement('div'); div.id = 'correction'; div.innerHTML = '<p><strong>Correction :</strong> " + value + "</p><p><strong>Message :</strong> " + message + "</p>'; document.body.appendChild(div);"
+    });
+    
+    // set the div just after the div with class "top-side-bar-training"
+    browser.tabs.executeScript({
+        code: "var div = document.getElementById('correction'); var topSideBarTraining = document.getElementsByClassName('top-side-bar-training')[0]; topSideBarTraining.parentNode.insertBefore(div, topSideBarTraining.nextSibling);"
+    });
+
+    // set a padding to the left and top and the div
+    browser.tabs.executeScript({
+        code: "var div = document.getElementById('correction'); div.style.paddingLeft = '10px'; div.style.paddingTop = '10px'; div.style.paddingBottom = '10px';"
+    });
+}
 
 /*
 Returns true only if the URL's protocol is in APPLICABLE_PROTOCOLS.
